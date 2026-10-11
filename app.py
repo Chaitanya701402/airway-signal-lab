@@ -79,7 +79,7 @@ def get_event(events: list[dict], cursor: float) -> dict:
 
 def display_number(value: object, suffix: str = "", decimals: int = 2) -> str:
     if value is None:
-        return "TO BE FILLED FROM MY RUN"
+        return "Unavailable"
     try:
         numeric = float(value)
         return f"{numeric:.{decimals}f}{suffix}" if np.isfinite(numeric) else "Not available"
@@ -471,7 +471,7 @@ def main() -> None:
             st.session_state.run_config = config
             st.session_state.run_path = str(config_path)
             st.session_state.run_overrides = overrides
-            st.session_state.cursor = 0.0
+            st.session_state.cursor = float(result["times"][0])
             st.session_state.playing = False
             st.session_state.pop("position_slider", None)
             st.session_state.pop("saved_run_directory", None)

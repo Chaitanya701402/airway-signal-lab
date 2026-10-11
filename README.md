@@ -12,7 +12,9 @@ RESULTS.md includes actual errors and limitations. Six held-out cough clips do n
 
 Source-specific licences and journal citations are in DATASETS.md and source_credits. ESC-50 is non-commercial CC BY-NC 3.0. Preserve original credits; a mirror's licence does not replace original terms. This is an educational research presentation. The full prepared-data archive is not uploaded to this deployment.
 
-#The checked-in `demo_assets.zip` contains the model, real audio, saved run and original source licences. The app checks its SHA-256 and unpacks it automatically on first startup; no manual data entry or download is needed.
+The checked-in `demo_assets.zip` contains the model, real audio, saved run and original source licences. The app checks its SHA-256 and unpacks it automatically on first startup; no manual data entry or download is needed.
+
+The machine-readable `packages.txt` accepts package names only; its template-like dependency declaration is covered by this checklist.
 
 # Originality checklist
 

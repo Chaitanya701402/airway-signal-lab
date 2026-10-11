@@ -1,0 +1,569 @@
+{
+  "scope": "Exploratory software audit. Synthetic obstruction labels; no clinical patient success rate. Scenario recordings are repeated, not independent observations.",
+  "classification": {
+    "CNN_original": {
+      "accuracy": 0.8898550724637682,
+      "macro_f1": 0.88164387147438
+    },
+    "RMS_only_logistic": {
+      "accuracy": 0.6202898550724638,
+      "macro_f1": 0.6484251291941745
+    },
+    "spectral_logistic": {
+      "accuracy": 0.881159420289855,
+      "macro_f1": 0.8769578350800784
+    },
+    "CNN_test_RMS_equalized": {
+      "accuracy": 0.6492753623188405,
+      "macro_f1": 0.550681186758298
+    },
+    "RMS_logistic_test_equalized": {
+      "accuracy": 0.20869565217391303,
+      "macro_f1": 0.08716707021791767
+    },
+    "spectral_logistic_test_equalized": {
+      "accuracy": 0.6898550724637681,
+      "macro_f1": 0.5915951103821748
+    }
+  },
+  "participants": [
+    {
+      "participant": "icbhi:105",
+      "windows_including_synthetic_derivatives": 36,
+      "normal_windows": 12,
+      "three_class_accuracy": 0.6388888888888888,
+      "normal_recall": 0.0,
+      "movable_synthetic_recall": 0.9166666666666666,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:111",
+      "windows_including_synthetic_derivatives": 36,
+      "normal_windows": 12,
+      "three_class_accuracy": 0.6666666666666666,
+      "normal_recall": 0.08333333333333333,
+      "movable_synthetic_recall": 0.9166666666666666,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:125",
+      "windows_including_synthetic_derivatives": 27,
+      "normal_windows": 9,
+      "three_class_accuracy": 1.0,
+      "normal_recall": 1.0,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:131",
+      "windows_including_synthetic_derivatives": 18,
+      "normal_windows": 6,
+      "three_class_accuracy": 0.7222222222222222,
+      "normal_recall": 0.16666666666666666,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:147",
+      "windows_including_synthetic_derivatives": 9,
+      "normal_windows": 3,
+      "three_class_accuracy": 0.7777777777777778,
+      "normal_recall": 0.3333333333333333,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:153",
+      "windows_including_synthetic_derivatives": 36,
+      "normal_windows": 12,
+      "three_class_accuracy": 1.0,
+      "normal_recall": 1.0,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:207",
+      "windows_including_synthetic_derivatives": 36,
+      "normal_windows": 12,
+      "three_class_accuracy": 1.0,
+      "normal_recall": 1.0,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    },
+    {
+      "participant": "icbhi:216",
+      "windows_including_synthetic_derivatives": 18,
+      "normal_windows": 6,
+      "three_class_accuracy": 0.9444444444444444,
+      "normal_recall": 0.8333333333333334,
+      "movable_synthetic_recall": 1.0,
+      "fixed_synthetic_recall": 1.0
+    }
+  ],
+  "scenarios": {
+    "conditions": [
+      {
+        "noise": "clean",
+        "snr_db": "clean",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "already_active_at_onset": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.47565625,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "clean",
+        "snr_db": "clean",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "detected": 24
+        },
+        "model_median_latency_s": 1.9063125000000003,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "0",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "0",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "10",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 23,
+          "detected": 1
+        },
+        "baseline_median_latency_s": 5.3693125,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "10",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "20",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.691312499999999,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "20",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "music",
+        "snr_db": "30",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 23,
+          "detected": 1
+        },
+        "model_median_latency_s": 5.941312499999999,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.60065625,
+        "paired_n": 1,
+        "paired_median_difference_s": -1.25
+      },
+      {
+        "noise": "music",
+        "snr_db": "30",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 21,
+          "detected": 3
+        },
+        "model_median_latency_s": 2.4413125000000004,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "0",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "0",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "10",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "10",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "20",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.60065625,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "20",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "30",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "already_active_at_onset": 13,
+          "missed": 11
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.47565625,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "noise",
+        "snr_db": "30",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "detected": 19,
+          "missed": 5
+        },
+        "model_median_latency_s": 2.2700625000000016,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "0",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "0",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "10",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "10",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 24
+        },
+        "model_median_latency_s": null,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "20",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "detected": 13,
+          "missed": 9,
+          "already_active_at_onset": 2
+        },
+        "model_median_latency_s": 3.5820000000000007,
+        "baseline_statuses": {
+          "detected": 20,
+          "missed": 4
+        },
+        "baseline_median_latency_s": 4.656312499999999,
+        "paired_n": 11,
+        "paired_median_difference_s": 0.5
+      },
+      {
+        "noise": "speech",
+        "snr_db": "20",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "missed": 18,
+          "detected": 6
+        },
+        "model_median_latency_s": 4.530312499999999,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      },
+      {
+        "noise": "speech",
+        "snr_db": "30",
+        "kind": "fixed",
+        "n": 24,
+        "model_statuses": {
+          "already_active_at_onset": 13,
+          "detected": 11
+        },
+        "model_median_latency_s": 0.6193124999999995,
+        "baseline_statuses": {
+          "detected": 24
+        },
+        "baseline_median_latency_s": 4.582000000000001,
+        "paired_n": 11,
+        "paired_median_difference_s": 3.75
+      },
+      {
+        "noise": "speech",
+        "snr_db": "30",
+        "kind": "movable",
+        "n": 24,
+        "model_statuses": {
+          "detected": 19,
+          "missed": 5
+        },
+        "model_median_latency_s": 2.3320000000000007,
+        "baseline_statuses": {
+          "missed": 24
+        },
+        "baseline_median_latency_s": null,
+        "paired_n": 0,
+        "paired_median_difference_s": null
+      }
+    ],
+    "false_alarm_episodes": 15,
+    "baseline_false_alarm_episodes": 0,
+    "cough_model": 12,
+    "cough_baseline": 0,
+    "cough_n": 312,
+    "mean_host_invocation_ms": 0.15828572564082075,
+    "all_events": {
+      "fixed": {
+        "model": {
+          "missed": 235,
+          "already_active_at_onset": 52,
+          "detected": 25
+        },
+        "baseline": {
+          "detected": 165,
+          "missed": 147
+        }
+      },
+      "movable": {
+        "model": {
+          "missed": 241,
+          "detected": 71
+        },
+        "baseline": {
+          "missed": 312
+        }
+      }
+    },
+    "paired_n": 23,
+    "paired_median_difference_s": 1.75
+  },
+  "Originality checklist": [
+    "Interface and reporting structure are templates",
+    "Authors must supply their own interpretation",
+    "University plagiarism checker and AI disclosure required"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "participants": [
+    {
+      "id": "105",
+      "path": "participant_data/105.json",
+      "breath_source": "105_1b1_Tc_sc_Meditron_cycle0",
+      "cough_source": "CAf8ILsDpQMeTPPLwi7nFlgRT2t1_cough-heavy",
+      "held_out": true,
+      "normal_recall": 0.0,
+      "normal_windows": 12
+    },
+    {
+      "id": "111",
+      "path": "participant_data/111.json",
+      "breath_source": "111_1b2_Tc_sc_Meditron_cycle0",
+      "cough_source": "CAf8ILsDpQMeTPPLwi7nFlgRT2t1_cough-shallow",
+      "held_out": true,
+      "normal_recall": 0.08333333333333333,
+      "normal_windows": 12
+    },
+    {
+      "id": "125",
+      "path": "participant_data/125.json",
+      "breath_source": "125_1b1_Tc_sc_Meditron_cycle0",
+      "cough_source": "XUsJp0qysAPtu3vBI0UCiHRJhZ22_cough-heavy",
+      "held_out": true,
+      "normal_recall": 1.0,
+      "normal_windows": 9
+    },
+    {
+      "id": "131",
+      "path": "participant_data/131.json",
+      "breath_source": "131_1b1_Al_sc_Meditron_cycle0",
+      "cough_source": "XUsJp0qysAPtu3vBI0UCiHRJhZ22_cough-shallow",
+      "held_out": true,
+      "normal_recall": 0.16666666666666666,
+      "normal_windows": 6
+    },
+    {
+      "id": "147",
+      "path": "participant_data/147.json",
+      "breath_source": "147_1b2_Tc_mc_AKGC417L_cycle0",
+      "cough_source": "tOlOwYDEHCRx1QegeMOPaydVcgv1_cough-heavy",
+      "held_out": true,
+      "normal_recall": 0.3333333333333333,
+      "normal_windows": 3
+    },
+    {
+      "id": "153",
+      "path": "participant_data/153.json",
+      "breath_source": "153_1b1_Al_sc_Meditron_cycle0",
+      "cough_source": "tOlOwYDEHCRx1QegeMOPaydVcgv1_cough-shallow",
+      "held_out": true,
+      "normal_recall": 1.0,
+      "normal_windows": 12
+    },
+    {
+      "id": "207",
+      "path": "participant_data/207.json",
+      "breath_source": "207_2b2_Al_mc_AKGC417L_cycle0",
+      "cough_source": "CAf8ILsDpQMeTPPLwi7nFlgRT2t1_cough-heavy",
+      "held_out": true,
+      "normal_recall": 1.0,
+      "normal_windows": 12
+    },
+    {
+      "id": "216",
+      "path": "participant_data/216.json",
+      "breath_source": "216_1b1_Al_sc_Meditron_cycle0",
+      "cough_source": "CAf8ILsDpQMeTPPLwi7nFlgRT2t1_cough-shallow",
+      "held_out": true,
+      "normal_recall": 0.8333333333333334,
+      "normal_windows": 6
+    }
+  ],
+  "scope": "Eight held-out ICBHI breathing sources. Coughs are separate Coswara donors; scenarios are constructed. Obstruction audio is synthetic.",
+  "Originality checklist": [
+    "UI structure is template-like",
+    "Supply your own interpretation and disclose AI assistance"
+  ]
+}

@@ -460,6 +460,23 @@ def main() -> None:
         render_run(st.session_state.result, st.session_state.run_config)
     else:
         empty_state(config_path, config)
+    research_path = ROOT / "research_evidence.json"
+    if research_path.exists():
+        with st.expander("Research evidence and failure analysis"):
+            evidence = json.loads(research_path.read_text(encoding="utf-8"))
+            st.warning(evidence["scope"])
+            st.write("Classification controls")
+            st.dataframe([{"Evaluation": key, "Accuracy": f"{value['accuracy']:.2%}", "Macro F1": round(value["macro_f1"], 4)} for key, value in evidence["classification"].items()], hide_index=True, use_container_width=True)
+            st.caption("RMS equalization is a test-only distribution shift. It is a sensitivity probe, not a revised clinical benchmark.")
+            st.write("Normal recall by held-out respiratory source participant")
+            st.dataframe([{"Source participant": row["participant"], "Normal windows": row["normal_windows"], "Normal recall": f"{row['normal_recall']:.1%}"} for row in evidence["participants"]], hide_index=True, use_container_width=True)
+            scenarios = evidence["scenarios"]
+            st.write(f"Repeated real-cough events with model alarms: {scenarios['cough_model']} / {scenarios['cough_n']}. Baseline: {scenarios['cough_baseline']} / {scenarios['cough_n']}.")
+            st.caption("The scenario grid reuses six cough clips. These are not independent patient-level estimates.")
+            for kind, detectors in scenarios["all_events"].items():
+                st.write(f"{kind.capitalize()} SYNTHETIC event outcomes")
+                st.json(detectors, expanded=True)
+            st.caption("Already-active alarms have no new-event latency. Misses are retained. Host CPU invocation time excludes preprocessing and is not ESP32 timing.")
     e3_path = ROOT / "experiment" / "e3_results.json"
     if e3_path.exists():
         with st.expander("E3: held-out prototype evaluation"):

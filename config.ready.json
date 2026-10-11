@@ -1,0 +1,123 @@
+{
+  "model_path": "assets/trained_demo.tflite",
+  "class_order": [
+    "normal",
+    "ambient",
+    "movable_synthetic",
+    "fixed_synthetic"
+  ],
+  "sample_rate": 16000,
+  "window_s": 2.0,
+  "hop_s": 0.25,
+  "input_layout": "NMFC",
+  "output_type": "probabilities",
+  "frontend_confirmed_matches_file2": true,
+  "feature": {
+    "type": "logmel",
+    "n_fft": 512,
+    "hop_length": 256,
+    "n_mels": 32,
+    "fmin": 50.0,
+    "fmax": 7800.0,
+    "power": 2.0,
+    "center": false,
+    "window": "hann",
+    "pad_mode": "constant",
+    "mel_norm": "slaney",
+    "htk": false,
+    "log": {
+      "type": "db",
+      "reference": 1.0,
+      "amin": 1e-10,
+      "top_db": 80.0
+    },
+    "normalization": {
+      "type": "global",
+      "mean": -64.69202423095703,
+      "std": 26.35917091369629
+    }
+  },
+  "scenario": [
+    {
+      "kind": "normal",
+      "path": "assets/real_breathing.wav",
+      "synthetic": false,
+      "repeat": true,
+      "source_id": "105_1b1_Tc_sc_Meditron_cycle0"
+    },
+    {
+      "kind": "cough",
+      "path": "assets/real_cough.wav",
+      "synthetic": false,
+      "repeat": false,
+      "source_id": "CAf8ILsDpQMeTPPLwi7nFlgRT2t1_cough-heavy"
+    },
+    {
+      "kind": "ambient",
+      "path": "assets/real_ambient_or_speech.wav",
+      "synthetic": false,
+      "repeat": true,
+      "source_id": "speech-librivox-0005"
+    },
+    {
+      "kind": "movable",
+      "path": "assets/synthetic_movable.wav",
+      "synthetic": true,
+      "repeat": false,
+      "r5_provenance": "PROPOSED_SYNTHESIS.md: documented provisional recipe because original R5 was absent; not physiological validation.",
+      "recipe_parameters": {
+        "attenuation_modulation_hz": 5.234312273488173,
+        "lowpass_hz": 1190.9232315896704,
+        "minimum_gain": 0.035,
+        "maximum_gain": 0.785
+      },
+      "source_id": "105_1b1_Tc_sc_Meditron_cycle0"
+    },
+    {
+      "kind": "fixed",
+      "path": "assets/synthetic_fixed.wav",
+      "synthetic": true,
+      "repeat": false,
+      "r5_provenance": "PROPOSED_SYNTHESIS.md: documented provisional recipe because original R5 was absent; not physiological validation.",
+      "recipe_parameters": {
+        "lowpass_hz": 640.2287121713231,
+        "gain": 0.06838432436602548
+      },
+      "source_id": "105_1b1_Tc_sc_Meditron_cycle0"
+    }
+  ],
+  "alarm": {
+    "probability_threshold": 0.7,
+    "consecutive_windows": 3,
+    "refractory_s": 1.0
+  },
+  "baseline": {
+    "rms_threshold": 0.006,
+    "timeout_s": 3.0,
+    "description": "Window-RMS inactivity timer: any complete 2-second window with RMS >= 0.006 resets the 3-second timer. Prototype comparator, not a breath detector."
+  },
+  "noise": {
+    "path": "assets/noise_environment.wav",
+    "snr_db": 30.0
+  },
+  "noise_options": [
+    {
+      "label": "Environment \u00b7 real ESC-50",
+      "path": "assets/noise_environment.wav"
+    },
+    {
+      "label": "Speech \u00b7 real MUSAN",
+      "path": "assets/noise_speech.wav"
+    },
+    {
+      "label": "Music \u00b7 real MUSAN",
+      "path": "assets/noise_music.wav"
+    }
+  ],
+  "synthetic_recipe_notice": "Proposed surrogate recipe; not the missing R5 specification. No clinical/physiological validity established.",
+  "Originality checklist": [
+    "Template-like methods and automatic metrics; rewrite interpretation in your own voice.",
+    "[STUDENT TO ADD: our own observation from run X / bench test Y]",
+    "Run the university plagiarism checker and disclose AI assistance per policy."
+  ]
+}

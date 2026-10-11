@@ -1,0 +1,14 @@
+# Streamlit inference deployment; training remains in the separate local package.
+streamlit==1.45.1
+numpy==2.1.3
+scipy==1.15.3
+soundfile==0.14.0
+librosa==1.0.0
+plotly==5.24.1
+matplotlib==3.10.0
+pillow==11.1.0
+ai-edge-litert==2.3.0
+
+# Originality checklist: deployment configuration is template-like.
+# [STUDENT TO ADD: our own observation from run X / bench test Y]
+# Rewrite interpretation, use university checker and disclose AI assistance.

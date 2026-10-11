@@ -1,0 +1,10 @@
+__pycache__/
+.runtime_cache/
+.venv/
+.streamlit/secrets.toml
+*.log
+exports/run-*/
+
+# Originality checklist: deployment configuration is template-like.
+# [STUDENT TO ADD: our own observation from run X / bench test Y]
+# Rewrite interpretation, use university checker and disclose AI assistance.

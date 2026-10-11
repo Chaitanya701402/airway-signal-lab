@@ -97,7 +97,30 @@ def csv_bytes(rows: list[dict]) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
+@st.cache_data(show_spinner=False)
+def prepared_participant(entry: dict):
+    from participants import participant_config
+    _, config = participant_config(ROOT, entry)
+    return config
+
+
 def choose_config() -> tuple[Path, dict | None]:
+    registry_path = ROOT / "participants.json"
+    if registry_path.exists():
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        choices = {row["id"]: row for row in registry["participants"]}
+        selected = st.selectbox("Breathing source participant", list(choices), format_func=lambda value: f"Participant {value} · held-out ICBHI recording", key="participant_choice")
+        entry = choices[selected]
+        st.caption(registry["scope"])
+        st.caption(f"Original held-out normal recall for this source: {entry['normal_recall']:.1%} across {entry['normal_windows']} windows. This is a saved classification audit, not a clinical success rate or the current timeline result.")
+        with st.expander("Presentation guide and source details"):
+            st.markdown("1. Select a participant; the actual model runs automatically.\n2. Open each audio tab and press its audio play button.\n3. Use **Play trace** to animate the recorded decisions.\n4. Choose speech, music or environmental noise, adjust SNR and press **Run actual TFLite model**.\n5. Open **Research evidence and failure analysis** to discuss errors and participant variation.")
+            st.write(f"Breathing source: {entry['breath_source']}")
+            st.write(f"Separate cough source: {entry['cough_source']}")
+            st.info("These are constructed timelines. The real cough is from a separate donor. Movable and fixed obstruction audio is SYNTHETIC; the illustration is not measured anatomy.")
+        st.session_state.setdefault("config_session_id", uuid.uuid4().hex)
+        path = ROOT / f".participant-{st.session_state.config_session_id}-{selected}.json"
+        return path, prepared_participant(entry)
     path = ROOT / "config.ready.json"
     st.sidebar.caption("Trained model and real presentation recordings are included.")
     try:
@@ -388,7 +411,7 @@ def main() -> None:
     st.sidebar.markdown("## Session controls")
     config_path, config = choose_config()
     ready_run = ROOT / "exports" / "ready_run"
-    if "result" not in st.session_state and "ready_load_attempted" not in st.session_state and (ready_run / "signals.npz").exists():
+    if not (ROOT / "participants.json").exists() and "result" not in st.session_state and "ready_load_attempted" not in st.session_state and (ready_run / "signals.npz").exists():
         st.session_state.ready_load_attempted = True
         try:
             from export_demo import load_run
@@ -415,14 +438,16 @@ def main() -> None:
             noise_options = []
         noise_options = [entry for entry in noise_options if isinstance(entry, dict) and isinstance(entry.get("label"), str) and isinstance(entry.get("path"), str)]
         if noise_options:
-            noise_by_label = {entry["label"]: entry["path"] for entry in noise_options}
+            noise_by_label = {"Clean · no added background": None, **{entry["label"]: entry["path"] for entry in noise_options}}
             noise_label = st.sidebar.selectbox("Noise type", list(noise_by_label))
             overrides["noise_path"] = noise_by_label[noise_label]
+            if overrides["noise_path"] is None:
+                config.pop("noise", None)
         elif noise_spec.get("path"):
             st.sidebar.caption(f"Noise file: {noise_spec['path']}")
         else:
             st.sidebar.caption("Add local noise_options or noise.path to enable adjustable SNR.")
-        if noise_options or noise_spec.get("path"):
+        if overrides.get("noise_path") is not None or (not noise_options and noise_spec.get("path")):
             configured_snr = noise_spec.get("snr_db")
             if isinstance(configured_snr, (int, float)) and not isinstance(configured_snr, bool) and np.isfinite(configured_snr):
                 overrides["snr_db"] = st.sidebar.number_input("Requested noise-mix SNR (dB)", value=float(configured_snr), min_value=-10.0, max_value=40.0, step=1.0)
@@ -433,9 +458,13 @@ def main() -> None:
             overrides["movable_onset_s"] = st.sidebar.number_input("Movable obstruction onset (s)", value=float(onset), min_value=max(0.25, float(onset) - 4.0), max_value=float(onset) + 15.0, step=0.25, help="Changes the ambient segment duration. The real cough is never synthesized or looped.")
         else:
             st.sidebar.caption("Onset control becomes available once clip durations can be read.")
-    if st.sidebar.button("Run actual TFLite model", type="primary", disabled=config is None, use_container_width=True):
+    requested_run = st.sidebar.button("Run actual TFLite model", type="primary", disabled=config is None, use_container_width=True)
+    participant_changed = config is not None and "participant_id" in config and str(config_path) != st.session_state.get("run_path")
+    if requested_run or participant_changed:
         try:
             with st.spinner("Building the audio timeline and measuring model invocation on this host CPU…"):
+                if "participant_id" in config:
+                    config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
                 result = run_scenario(str(config_path), **overrides)
             st.session_state.result = result
             result.setdefault("metadata", {})["ui_scenario_overrides"] = dict(overrides)

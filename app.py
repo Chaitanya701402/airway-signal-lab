@@ -214,6 +214,30 @@ def alarm_figure(result: dict, cursor: float) -> go.Figure:
     return style_figure(fig, 190, margin_l=110)
 
 
+def scenario_audio_bytes(result: dict, event: dict) -> bytes:
+    """Encode only this event's actual mixed samples, preserving their amplitude."""
+    import soundfile as sf
+    sr = int(result["sr"])
+    audio = np.asarray(result["audio"])
+    start = max(0, min(len(audio), round(float(event["start_s"]) * sr)))
+    stop = max(start, min(len(audio), round(float(event["end_s"]) * sr)))
+    buffer = io.BytesIO()
+    sf.write(buffer, audio[start:stop], sr, format="WAV", subtype="PCM_16")
+    return buffer.getvalue()
+
+
+def render_scenario_audio(result: dict) -> None:
+    st.markdown("### Listen by scenario")
+    st.caption("Each tab plays only that event from this run. Press its audio play button; trace animation uses separate controls.")
+    events = result["events"]
+    tabs = st.tabs([TITLES[event["kind"]] for event in events])
+    for tab, event in zip(tabs, events):
+        with tab:
+            st.caption(f'{TITLES[event["kind"]]} · {float(event["start_s"]):.2f}–{float(event["end_s"]):.2f} s in the full timeline')
+            st.audio(scenario_audio_bytes(result, event), format="audio/wav")
+    st.caption("Breathing, cough and background recordings are real. Both obstruction segments are SYNTHETIC.")
+
+
 def render_run(result: dict, config: dict) -> None:
     duration = float(result["events"][-1]["end_s"])
     st.session_state.setdefault("cursor", 0.0)
@@ -240,6 +264,8 @@ def render_run(result: dict, config: dict) -> None:
         st.session_state.wall_anchor = time.monotonic()
         st.rerun()
     st.caption("Playback replays the actual saved inference trace. It does not run the model again on each animation frame.")
+
+    render_scenario_audio(result)
 
     @st.fragment(run_every=0.5 if st.session_state.playing else None)
     def live_panels() -> None:

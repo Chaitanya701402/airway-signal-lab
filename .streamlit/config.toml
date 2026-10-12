@@ -1,0 +1,10 @@
+[theme]
+base = "dark"
+primaryColor = "#56d6bd"
+backgroundColor = "#0d1824"
+secondaryBackgroundColor = "#142537"
+textColor = "#eaf2f8"
+font = "sans serif"
+
+# Originality checklist: theme values are presentation settings.
+# Interpret model outcomes from saved logs and disclose AI assistance per policy.

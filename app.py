@@ -389,9 +389,6 @@ def main() -> None:
     st.markdown("""<style>
     .stApp {background:#0d1824;color:#eaf2f8;} [data-testid=stSidebar] {background:#142537;}
     .block-container {padding-top:3.5rem;max-width:1380px;} h1 {letter-spacing:-1px;font-weight:700;}
-    [data-testid=stElementContainer]:has(.sim-banner) {position:sticky;top:3rem;z-index:999;}
-    .sim-banner {padding:10px 16px;border:1px solid #a77937;
-      background:#3b2c1a;color:#ffe8bc;border-radius:8px;font-size:14px;letter-spacing:.1px;}
     .eyebrow {color:#68ddc7;letter-spacing:2px;font-size:12px;margin-top:20px;font-weight:700;}
     [data-testid=stMetric] {background:#142537;border:1px solid #2d4557;padding:14px;border-radius:10px;}
     [data-testid=stMetricValue] {font-size:1.35rem;white-space:normal;}
@@ -401,7 +398,6 @@ def main() -> None:
     .stApp [data-testid=stCaptionContainer] p {color:#b7cad7;}
     [data-testid=stSidebar] label,[data-testid=stSidebar] p {color:#dce8f2;}
     </style>""", unsafe_allow_html=True)
-    st.markdown('<div class="sim-banner">SIMULATION. Obstruction audio is SYNTHETIC. Not clinically validated.</div>', unsafe_allow_html=True)
     st.markdown('<div class="eyebrow">SOFTWARE SIMULATION</div>', unsafe_allow_html=True)
     st.title("Airway Signal Lab")
     st.markdown("Listen to the sounds, then watch how the model and timeout alarm respond.")

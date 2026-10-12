@@ -44,10 +44,10 @@ def unpack_bundled_assets():
 KINDS = ("normal", "cough", "ambient", "movable", "fixed")
 TITLES = {
     "normal": "Normal breathing",
-    "cough": "Real cough · ambient confounder",
-    "ambient": "Ambient / speech",
-    "movable": "Movable obstruction · SYNTHETIC",
-    "fixed": "Fixed obstruction · SYNTHETIC",
+    "cough": "Cough (real recording)",
+    "ambient": "Background / speech",
+    "movable": "Movable obstruction (synthetic)",
+    "fixed": "Fixed obstruction (synthetic)",
 }
 COLORS = {"normal": "#5ce4c1", "cough": "#ffbd69", "ambient": "#7facff", "movable": "#ff9188", "fixed": "#e88bd9"}
 CLASS_TITLES = {
@@ -109,15 +109,14 @@ def choose_config() -> tuple[Path, dict | None]:
     if registry_path.exists():
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
         choices = {row["id"]: row for row in registry["participants"]}
-        selected = st.selectbox("Breathing source participant", list(choices), format_func=lambda value: f"Participant {value} · held-out ICBHI recording", key="participant_choice")
+        selected = st.sidebar.selectbox("Breathing recording", list(choices), format_func=lambda value: f"Participant {value}", key="participant_choice")
         entry = choices[selected]
-        st.caption(registry["scope"])
-        st.caption(f"Original held-out normal recall for this source: {entry['normal_recall']:.1%} across {entry['normal_windows']} windows. This is a saved classification audit, not a clinical success rate or the current timeline result.")
-        with st.expander("Presentation guide and source details"):
-            st.markdown("1. Select a participant; the actual model runs automatically.\n2. Open each audio tab and press its audio play button.\n3. Use **Play trace** to animate the recorded decisions.\n4. Choose speech, music or environmental noise, adjust SNR and press **Run actual TFLite model**.\n5. Open **Research evidence and failure analysis** to discuss errors and participant variation.")
+        with st.sidebar.expander("About this recording"):
+            st.caption(registry["scope"])
             st.write(f"Breathing source: {entry['breath_source']}")
             st.write(f"Separate cough source: {entry['cough_source']}")
-            st.info("These are constructed timelines. The real cough is from a separate donor. Movable and fixed obstruction audio is SYNTHETIC; the illustration is not measured anatomy.")
+            st.caption(f"Saved test-set normal recall for this source: {entry['normal_recall']:.1%} across {entry['normal_windows']} windows. This is not a clinical success rate or the current timeline result.")
+            st.caption("The cough comes from a separate donor. Both obstruction sounds are synthetic.")
         st.session_state.setdefault("config_session_id", uuid.uuid4().hex)
         path = ROOT / f".participant-{st.session_state.config_session_id}-{selected}.json"
         return path, prepared_participant(entry)
@@ -250,15 +249,18 @@ def scenario_audio_bytes(result: dict, event: dict) -> bytes:
 
 
 def render_scenario_audio(result: dict) -> None:
-    st.markdown("### Listen by scenario")
-    st.caption("Each tab plays only that event from this run. Press its audio play button; trace animation uses separate controls.")
+    st.markdown("### Hear the sounds")
+    st.caption("Choose one part of the scenario and press play.")
     events = result["events"]
-    tabs = st.tabs([TITLES[event["kind"]] for event in events])
-    for tab, event in zip(tabs, events):
-        with tab:
-            st.caption(f'{TITLES[event["kind"]]} · {float(event["start_s"]):.2f}–{float(event["end_s"]):.2f} s in the full timeline')
-            st.audio(scenario_audio_bytes(result, event), format="audio/wav")
-    st.caption("Breathing, cough and background recordings are real. Both obstruction segments are SYNTHETIC.")
+    selected = st.selectbox(
+        "Sound to play", range(len(events)),
+        format_func=lambda index: TITLES[events[index]["kind"]],
+        key="scenario_audio_event",
+    )
+    event = events[selected]
+    source = "Synthetic scenario audio" if event["kind"] in {"movable", "fixed"} else "Real source recording"
+    st.caption(f'{source} · {float(event["start_s"]):.1f}–{float(event["end_s"]):.1f} s of the timeline')
+    st.audio(scenario_audio_bytes(result, event), format="audio/wav")
 
 
 def render_run(result: dict, config: dict) -> None:
@@ -266,29 +268,22 @@ def render_run(result: dict, config: dict) -> None:
     st.session_state.setdefault("cursor", 0.0)
     st.session_state.setdefault("playing", False)
     st.session_state.setdefault("speed", 1.0)
-    controls = st.columns([1, 1, 3, 2])
-    if controls[0].button("Pause" if st.session_state.playing else "Play trace", use_container_width=True):
+    render_scenario_audio(result)
+    st.markdown("### Watch the model respond")
+    controls = st.columns([1, 1, 3])
+    if controls[0].button("Pause" if st.session_state.playing else "Play timeline", use_container_width=True):
         st.session_state.playing = not st.session_state.playing
         st.session_state.position_slider = st.session_state.cursor
         st.session_state.wall_anchor = time.monotonic()
         st.session_state.trace_anchor = st.session_state.cursor
         st.rerun()
-    if controls[1].button("Restart", use_container_width=True):
+    if controls[1].button("Start over", use_container_width=True):
         st.session_state.cursor = 0.0
         st.session_state.position_slider = 0.0
         st.session_state.trace_anchor = 0.0
         st.session_state.wall_anchor = time.monotonic()
         st.rerun()
-    jump = controls[2].selectbox("Jump to event", ["Choose event"] + list(KINDS), format_func=lambda x: TITLES.get(x, x), label_visibility="collapsed")
-    if controls[3].button("Go to event", disabled=jump == "Choose event", use_container_width=True):
-        st.session_state.cursor = float(next(e for e in result["events"] if e["kind"] == jump)["start_s"])
-        st.session_state.position_slider = st.session_state.cursor
-        st.session_state.trace_anchor = st.session_state.cursor
-        st.session_state.wall_anchor = time.monotonic()
-        st.rerun()
-    st.caption("Playback replays the actual saved inference trace. It does not run the model again on each animation frame.")
-
-    render_scenario_audio(result)
+    controls[2].caption("The timeline shows recorded model results. Use the slider below to inspect any moment.")
 
     @st.fragment(run_every=0.5 if st.session_state.playing else None)
     def live_panels() -> None:
@@ -311,7 +306,7 @@ def render_run(result: dict, config: dict) -> None:
         with first:
             st.markdown(f"### {TITLES[event['kind']]}")
             components.html(render_airway(event["kind"], cursor), height=355)
-            st.caption("Scenario illustration · not measured anatomy or airflow. Drag the cutaway to change the view.")
+            st.caption("Illustrative airway view · drag to rotate")
             st.progress(min(1.0, cursor / duration), text=f"Trace {cursor:.2f} s / {duration:.2f} s")
         with second:
             state_columns = st.columns(3)
@@ -321,16 +316,15 @@ def render_run(result: dict, config: dict) -> None:
             state_columns[1].metric("Fixed-timeout baseline", "ALARM" if baseline_state else "CLEAR" if baseline_state is not None else "Awaiting window")
             inference = result["inference_ms"][index] if index >= 0 else None
             state_columns[2].metric("Inference / window", display_number(inference, " ms"))
-            st.caption("Inference timing: **host CPU, not ESP32**. Timed model invocation; see engine notes for exclusions.")
-            st.caption(result.get("metadata", {}).get("execution_host", "Fresh run measured on the current hosting CPU."))
+            st.caption("Inference timing: host CPU, not ESP32")
             st.plotly_chart(probability_figure(result, index), use_container_width=True, config={"displayModeBar": False}, key="probabilities")
         st.plotly_chart(waveform_figure(result, cursor, float(st.session_state.get("history_s", 8.0))), use_container_width=True, config={"displayModeBar": False}, key="waveform")
         lower_left, lower_right = st.columns([1, 1])
         with lower_left:
-            st.markdown("**Moving frontend features — before normalization**")
+            st.markdown("**Sound features**")
             st.plotly_chart(feature_figure(result, index, config), use_container_width=True, config={"displayModeBar": False}, key="spectrogram")
         with lower_right:
-            st.markdown("**Alarm comparison — high lane = alarm active**")
+            st.markdown("**Alarm timeline**")
             st.plotly_chart(alarm_figure(result, cursor), use_container_width=True, config={"displayModeBar": False}, key="alarms")
             detections = [row for row in result["metrics"]["detection_events"] if float(row["onset_s"]) <= cursor]
             if detections:
@@ -339,25 +333,26 @@ def render_run(result: dict, config: dict) -> None:
                 st.metric("Baseline latency − model latency", display_number(row.get("latency_difference_s"), " s") if row.get("latency_difference_s") is not None else "Not jointly measurable")
             else:
                 st.caption("Latency is evaluated from each configured obstruction onset. Positive difference means the model alarm occurred earlier.")
-            st.caption("Audio-timeline algorithmic latency; excludes processing and rendering. It is not end-to-end host or ESP32 alarm latency.")
+            st.caption("Timeline delay; processing time is excluded.")
 
     live_panels()
     st.divider()
-    st.markdown("### Complete-run results from the saved trace")
+    st.markdown("### Run summary")
     metrics = result["metrics"]
-    boxes = st.columns(5)
-    boxes[0].metric("Model false-alarm episodes", display_number(metrics.get("false_alarm_episodes"), decimals=0))
-    boxes[1].metric("Baseline false-alarm episodes", display_number(metrics.get("baseline_false_alarm_episodes"), decimals=0))
-    cough_rate = metrics.get("cough_false_alarm_rate")
-    boxes[2].metric("E4 cough false-alarm rate", f"{float(cough_rate):.1%}" if cough_rate is not None else "Not evaluable")
-    baseline_cough_rate = metrics.get("baseline_cough_false_alarm_rate")
-    boxes[3].metric("Baseline cough false-alarm rate", f"{float(baseline_cough_rate):.1%}" if baseline_cough_rate is not None else "Not evaluable")
-    boxes[4].metric("Mean inference · host CPU", display_number(metrics.get("inference_mean_ms"), " ms"))
-    st.caption(f"Cough events with a model alarm: {metrics.get('cough_false_alarm_events', 'unavailable')} / {metrics.get('cough_evaluable_events', 'unavailable')} evaluable real cough events. Unevaluable events: {metrics.get('cough_unevaluable_events', 'unavailable')}. This demonstration is not an E3 test-set evaluation.")
-    st.caption(metrics.get("cough_far_definition", "See the recorded metric definition in the exported summary."))
-    st.caption(metrics.get("latency_definition", "Latency is measured on the audio timeline; processing and rendering are excluded."))
-    st.dataframe(metrics["detection_events"], hide_index=True, use_container_width=True)
-    st.caption("Missing latency means no fresh qualifying alarm could be measured; it is never replaced by zero. A previously active alarm is reported separately.")
+    boxes = st.columns(3)
+    boxes[0].metric("False alarms", display_number(metrics.get("false_alarm_episodes"), decimals=0))
+    boxes[1].metric("Cough alarms", f"{metrics.get('cough_false_alarm_events', '—')} / {metrics.get('cough_evaluable_events', '—')}")
+    boxes[2].metric("Mean inference · host CPU", display_number(metrics.get("inference_mean_ms"), " ms"))
+    with st.expander("Detailed event results"):
+        detail = st.columns(2)
+        detail[0].metric("Timeout baseline false alarms", display_number(metrics.get("baseline_false_alarm_episodes"), decimals=0))
+        cough_rate = metrics.get("cough_false_alarm_rate")
+        detail[1].metric("Cough false-alarm rate", f"{float(cough_rate):.1%}" if cough_rate is not None else "Not evaluable")
+        st.caption(metrics.get("cough_far_definition", "See the recorded metric definition in the exported summary."))
+        st.caption(metrics.get("latency_definition", "Latency is measured on the audio timeline; processing and rendering are excluded."))
+        st.dataframe(metrics["detection_events"], hide_index=True, use_container_width=True)
+        st.caption("A missing latency means no new qualifying alarm was measured. Previously active alarms are reported separately.")
+        st.caption(result.get("metadata", {}).get("execution_host", "Fresh run measured on the current hosting CPU."))
     with st.expander("Listen to the actual mixed audio and inspect provenance"):
         st.audio(np.asarray(result["audio"]), sample_rate=int(result["sr"]))
         st.caption("The audio player has independent playback controls; it is not synchronized with the trace playback control above.")
@@ -392,23 +387,26 @@ def main() -> None:
     st.set_page_config(page_title="Airway Signal Lab · Simulation", page_icon="◉", layout="wide")
     unpack_bundled_assets()
     st.markdown("""<style>
-    .stApp {background:#09131f;color:#ecf3ff;} [data-testid=stSidebar] {background:#111c2b;}
-    .block-container {padding-top:4.25rem;max-width:1600px;} h1 {letter-spacing:-1.5px;font-weight:750;}
+    .stApp {background:#0d1824;color:#eaf2f8;} [data-testid=stSidebar] {background:#142537;}
+    .block-container {padding-top:3.5rem;max-width:1380px;} h1 {letter-spacing:-1px;font-weight:700;}
     [data-testid=stElementContainer]:has(.sim-banner) {position:sticky;top:3rem;z-index:999;}
-    .sim-banner {padding:12px 18px;border:1px solid #cc8d3a;
-      background:#3d2b14;color:#ffe1a6;border-radius:8px;font-size:14px;letter-spacing:.2px;}
-    .eyebrow {color:#5ce4c1;letter-spacing:3px;font-size:12px;margin-top:24px;}
-    [data-testid=stMetric] {background:#111c2b;border:1px solid #23354a;padding:14px;border-radius:10px;}
+    .sim-banner {padding:10px 16px;border:1px solid #a77937;
+      background:#3b2c1a;color:#ffe8bc;border-radius:8px;font-size:14px;letter-spacing:.1px;}
+    .eyebrow {color:#68ddc7;letter-spacing:2px;font-size:12px;margin-top:20px;font-weight:700;}
+    [data-testid=stMetric] {background:#142537;border:1px solid #2d4557;padding:14px;border-radius:10px;}
     [data-testid=stMetricValue] {font-size:1.35rem;white-space:normal;}
-    [data-testid=stTextInput] input,[data-testid=stNumberInput] input {background:#172638;color:#ecf3ff;}
-    [data-baseweb=select] > div {background:#172638;color:#ecf3ff;}
-    [data-testid=stSidebar] label,[data-testid=stSidebar] p {color:#d8e4f2;}
+    [data-testid=stTextInput] input,[data-testid=stNumberInput] input {background:#1a3042;color:#eaf2f8;}
+    [data-baseweb=select] > div {background:#1a3042;color:#eaf2f8;}
+    .stApp p,.stApp label,.stApp h1,.stApp h2,.stApp h3 {color:#eaf2f8;}
+    .stApp [data-testid=stCaptionContainer] p {color:#b7cad7;}
+    [data-testid=stSidebar] label,[data-testid=stSidebar] p {color:#dce8f2;}
     </style>""", unsafe_allow_html=True)
     st.markdown('<div class="sim-banner">SIMULATION. Obstruction audio is SYNTHETIC. Not clinically validated.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="eyebrow">FILE 4 / INTERACTIVE DEMONSTRATION</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">SOFTWARE SIMULATION</div>', unsafe_allow_html=True)
     st.title("Airway Signal Lab")
-    st.markdown("Follow one audio timeline. Inspect the model's decisions. Compare the alarm timing.")
-    st.sidebar.markdown("## Session controls")
+    st.markdown("Listen to the sounds, then watch how the model and timeout alarm respond.")
+    st.sidebar.markdown("## Set up the scenario")
+    st.sidebar.markdown("**1. Choose a breathing recording**")
     config_path, config = choose_config()
     ready_run = ROOT / "exports" / "ready_run"
     if not (ROOT / "participants.json").exists() and "result" not in st.session_state and "ready_load_attempted" not in st.session_state and (ready_run / "signals.npz").exists():
@@ -424,11 +422,9 @@ def main() -> None:
             st.session_state.playing = False
         except Exception as exc:
             st.warning(f"Saved demonstration could not be loaded: {exc}")
-    if config and config.get("synthetic_recipe_notice"):
-        st.caption(config["synthetic_recipe_notice"])
     overrides: dict = {}
     if config:
-        st.sidebar.caption("Parameters below change the saved-audio scenario. They are inputs, not measured performance.")
+        st.sidebar.markdown("**2. Add background and set timing**")
         noise_spec = config.get("noise") or {}
         if not isinstance(noise_spec, dict):
             noise_spec = {}
@@ -439,7 +435,7 @@ def main() -> None:
         noise_options = [entry for entry in noise_options if isinstance(entry, dict) and isinstance(entry.get("label"), str) and isinstance(entry.get("path"), str)]
         if noise_options:
             noise_by_label = {"Clean · no added background": None, **{entry["label"]: entry["path"] for entry in noise_options}}
-            noise_label = st.sidebar.selectbox("Noise type", list(noise_by_label))
+            noise_label = st.sidebar.selectbox("Background sound", list(noise_by_label))
             overrides["noise_path"] = noise_by_label[noise_label]
             if overrides["noise_path"] is None:
                 config.pop("noise", None)
@@ -450,15 +446,15 @@ def main() -> None:
         if overrides.get("noise_path") is not None or (not noise_options and noise_spec.get("path")):
             configured_snr = noise_spec.get("snr_db")
             if isinstance(configured_snr, (int, float)) and not isinstance(configured_snr, bool) and np.isfinite(configured_snr):
-                overrides["snr_db"] = st.sidebar.number_input("Requested noise-mix SNR (dB)", value=float(configured_snr), min_value=-10.0, max_value=40.0, step=1.0)
+                overrides["snr_db"] = st.sidebar.number_input("Background level (SNR, dB)", value=float(configured_snr), min_value=-10.0, max_value=40.0, step=1.0, help="A lower SNR makes the background sound more prominent.")
             else:
                 st.sidebar.warning("Set noise.snr_db in the configuration to choose a starting SNR.")
         onset = derive_onset(config_path, config)
         if onset is not None and np.isfinite(onset) and onset > 0:
-            overrides["movable_onset_s"] = st.sidebar.number_input("Movable obstruction onset (s)", value=float(onset), min_value=max(0.25, float(onset) - 4.0), max_value=float(onset) + 15.0, step=0.25, help="Changes the ambient segment duration. The real cough is never synthesized or looped.")
+            overrides["movable_onset_s"] = st.sidebar.number_input("Movable event starts at (s)", value=float(onset), min_value=max(0.25, float(onset) - 4.0), max_value=float(onset) + 15.0, step=0.25, help="Changes the ambient segment duration. The real cough is never synthesized or looped.")
         else:
             st.sidebar.caption("Onset control becomes available once clip durations can be read.")
-    requested_run = st.sidebar.button("Run actual TFLite model", type="primary", disabled=config is None, use_container_width=True)
+    requested_run = st.sidebar.button("Run scenario", type="primary", disabled=config is None, use_container_width=True)
     participant_changed = config is not None and "participant_id" in config and str(config_path) != st.session_state.get("run_path")
     if requested_run or participant_changed:
         try:
@@ -480,19 +476,21 @@ def main() -> None:
             st.session_state.pop("result", None)
             st.error(f"The simulation has not run: {exc}")
             st.info("Resolve the missing assets or configuration mismatch and run again. No fallback predictions are generated.")
-    st.sidebar.number_input("Waveform history (s)", min_value=1.0, max_value=60.0, value=8.0, step=1.0, key="history_s")
-    st.sidebar.select_slider("Trace playback speed", options=[0.5, 1.0, 2.0], value=1.0, key="speed", format_func=lambda value: f"{value:g}×")
-    st.sidebar.caption("Changing scenario controls requires another model run. Replaying the trace uses the recorded outputs.")
+    with st.sidebar.expander("Playback options"):
+        st.number_input("Waveform history (s)", min_value=1.0, max_value=60.0, value=8.0, step=1.0, key="history_s")
+        st.select_slider("Timeline speed", options=[0.5, 1.0, 2.0], value=1.0, key="speed", format_func=lambda value: f"{value:g}×")
     if "result" in st.session_state:
         if str(config_path) != st.session_state.get("run_path") or overrides != st.session_state.get("run_overrides") or config != st.session_state.get("run_config"):
-            st.warning("Controls have changed. The panels still show the previous run until you run the model again.")
+            st.info("Settings changed. Select **Run scenario** to update the results.")
         render_run(st.session_state.result, st.session_state.run_config)
     else:
         empty_state(config_path, config)
     research_path = ROOT / "research_evidence.json"
     if research_path.exists():
-        with st.expander("Research evidence and failure analysis"):
+        with st.expander("Study results and limitations"):
             evidence = json.loads(research_path.read_text(encoding="utf-8"))
+            if config and config.get("synthetic_recipe_notice"):
+                st.caption(config["synthetic_recipe_notice"])
             st.warning(evidence["scope"])
             st.write("Classification controls")
             st.dataframe([{"Evaluation": key, "Accuracy": f"{value['accuracy']:.2%}", "Macro F1": round(value["macro_f1"], 4)} for key, value in evidence["classification"].items()], hide_index=True, use_container_width=True)
@@ -508,7 +506,7 @@ def main() -> None:
             st.caption("Already-active alarms have no new-event latency. Misses are retained. Host CPU invocation time excludes preprocessing and is not ESP32 timing.")
     e3_path = ROOT / "experiment" / "e3_results.json"
     if e3_path.exists():
-        with st.expander("E3: held-out prototype evaluation"):
+        with st.expander("Test-set results"):
             e3 = json.loads(e3_path.read_text(encoding="utf-8"))
             cough = e3["cough_false_alarm_rate"]
             st.write(e3["scope"])
@@ -516,8 +514,6 @@ def main() -> None:
             st.write(f"Real cough false alarms: model {cough['model_numerator']} / {cough['denominator']}; baseline {cough['baseline_numerator']} / {cough['denominator']}.")
             st.caption(cough["definition"])
             st.caption("These are prototype measurements. Synthetic-class accuracy does not establish detection of real obstruction. See RESULTS.md for the full error table and limitations.")
-    with st.expander("Originality checklist"):
-        st.markdown("- The interface, captions, and demo narration are templates. Rewrite the introduction and interpretation in your own voice.\n- [STUDENT TO ADD: our own observation from run X / bench test Y]\n- Add your own reasoning about cough errors, missed events, threshold choices, and baseline limitations.\n- Run your university's plagiarism checker and disclose AI assistance under its policy. No plagiarism or AI-detection percentage is promised.")
 
 
 if __name__ == "__main__":

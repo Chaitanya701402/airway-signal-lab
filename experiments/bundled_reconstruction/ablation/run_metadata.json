@@ -1,0 +1,21 @@
+{
+  "status": "completed",
+  "seed": 20261011,
+  "class_order": [
+    "normal",
+    "ambient",
+    "movable_synthetic",
+    "fixed_synthetic"
+  ],
+  "data_path": "experiments\\bundled_reconstruction\\prepared_source_split.npz",
+  "provenance": {
+    "manifest": "experiments\\bundled_reconstruction\\window_manifest.csv",
+    "group_integrity": "verified",
+    "normalization": "must be documented as train-only by manifest/run metadata",
+    "manifest_rows": 576,
+    "groups": 8
+  },
+  "feature_protocol": "Prepared 16 kHz mono 2 s windows; 32-band log-Mel; FFT 512; hop 256. Train-only normalization must be documented by supplied artifact.",
+  "historical_reference": "7,344-parameter CNN and 0.8816 macro F1 are historical, not reproduced claims; E0 is a reimplementation because original training source is absent.",
+  "scientific_limits": "Synthetic obstruction surrogates are not clinical labels; ambient includes real cough; held-out custom split is not an official ICBHI score."
+}

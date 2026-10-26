@@ -1,0 +1,32 @@
+{
+  "status": "prepared",
+  "seed": 20261026,
+  "class_order": [
+    "normal",
+    "ambient",
+    "movable_synthetic",
+    "fixed_synthetic"
+  ],
+  "splits": {
+    "105": "train",
+    "111": "train",
+    "125": "train",
+    "131": "train",
+    "147": "val",
+    "153": "val",
+    "207": "test",
+    "216": "test"
+  },
+  "counts": {
+    "train": 288,
+    "val": 144,
+    "test": 144
+  },
+  "normalization": {
+    "type": "global_scalar",
+    "fit": "training features only",
+    "mean": -61.252525329589844,
+    "std": 29.554323196411133
+  },
+  "scope": "Small bundled reconstruction using eight ICBHI breathing sources. Ambient and obstruction examples are generated transformations; results are not clinical validation and are not comparable to the historical full prepared-data evaluation."
+}

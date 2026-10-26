@@ -1,0 +1,19 @@
+{
+  "status": "blocked_before_training",
+  "date": "2026-10-26",
+  "hardware": {
+    "gpu": "No NVIDIA runtime detected: nvidia-smi is unavailable.",
+    "tensorflow": "not installed in local Python 3.10",
+    "keras": "not installed in local Python 3.10"
+  },
+  "data_checks": {
+    "prepared_source_split_npz": "not found",
+    "window_manifest_csv": "not found",
+    "only_npz_found": "exports/ready_run/signals.npz",
+    "only_npz_assessment": "Saved demonstration timeline; not a labeled train/validation/test corpus and not valid training input."
+  },
+  "class_order": ["normal", "ambient", "movable_synthetic", "fixed_synthetic"],
+  "training_executed": false,
+  "test_evaluated": false,
+  "scientific_scope": "Synthetic obstruction surrogates are not clinically validated obstruction recordings. Ambient includes real cough."
+}

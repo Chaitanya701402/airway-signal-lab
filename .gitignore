@@ -4,6 +4,12 @@ __pycache__/
 .streamlit/secrets.toml
 *.log
 exports/run-*/
+experiments/hybrid_ablation/*.keras
+experiments/hybrid_ablation/*.png
+experiments/hybrid_ablation/*.csv
+experiments/hybrid_ablation/*.json
+experiments/hybrid_ablation/*.zip
+prepared_data/
 
 # Originality checklist: deployment configuration is template-like.
 # [STUDENT TO ADD: our own observation from run X / bench test Y]

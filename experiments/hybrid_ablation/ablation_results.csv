@@ -1,0 +1,1 @@
+model,accuracy_pct,macro_precision_pct,macro_recall_pct,macro_f1_pct,macro_f1_change_vs_e0_pp,normal_recall_pct,normal_recall_change_vs_e0_pp,trainable_parameters,total_parameters,model_size_mb,inference_latency_ms,training_time_s,best_validation_loss,status

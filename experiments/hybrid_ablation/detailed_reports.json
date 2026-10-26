@@ -1,0 +1,6 @@
+{
+  "status": "blocked",
+  "measured_models": [],
+  "class_order": ["normal", "ambient", "movable_synthetic", "fixed_synthetic"],
+  "reason": "No prepared source-split training archive or source-group manifest is present in the workspace. No metrics, confusion matrices, models, or comparisons were generated."
+}

@@ -4,6 +4,28 @@
 
 This repository contains the running presentation app, actual trained TFLite model, saved real source clips, synthetic surrogate clips and measured reference logs. No manual data entry is needed. The 3D scene illustrates known scenario labels; it is not reconstructed anatomy or a validated airflow simulation.
 
+## New measured hybrid-model experiment
+
+The repository now also contains a reproducible, source-separated **bundled reconstruction ablation**. It compares four models using the same frozen train/validation/test source groups, seed, features and validation-loss checkpoint selection:
+
+| Variant | Architecture | Held-out accuracy | Held-out macro F1 |
+| --- | --- | ---: | ---: |
+| E0 | CNN | 76.39% | 0.7560 |
+| E1 | CNN + GRU | 79.17% | 0.7871 |
+| E2 | CNN + temporal attention | **98.61%** | **0.9861** |
+| E3 | CNN + GRU + temporal attention | 88.19% | 0.8759 |
+
+The result is a controlled engineering ablation, not a clinical result or a numerical replacement for the historical 345-window TFLite evaluation: it uses eight bundled ICBHI breathing sources, with controlled derived ambient and obstruction conditions. The experiment artifacts are directly available:
+
+- [Full measured results and scope](experiments/bundled_reconstruction/RESULTS.md)
+- [Split and feature validation report](experiments/bundled_reconstruction/VALIDATION_REPORT.md)
+- [Cleaning and data-synthesis pipeline](experiments/bundled_reconstruction/pipeline_overview.png)
+- [E0--E3 comparison chart](experiments/bundled_reconstruction/ablation_comparison.png)
+- [E2 held-out confusion matrix](experiments/bundled_reconstruction/confusion_matrix_E2.png)
+- [Google Colab workflow](notebooks/bundled_reconstruction_colab.ipynb)
+
+To reproduce the experiment, run `python experiments/build_bundled_reconstruction.py`, then run `python experiments/hybrid_ablation.py --data experiments/bundled_reconstruction/prepared_source_split.npz --manifest experiments/bundled_reconstruction/window_manifest.csv --output experiments/bundled_reconstruction/ablation --epochs 35 --batch-size 16`. Finally, run `python experiments/validate_bundled_reconstruction.py` and `python experiments/plot_bundled_results.py`.
+
 Deploy through Streamlit Community Cloud using repository branch `main`, entrypoint `app.py`, and Python **3.13**. No secrets are needed by this app. Hosting uses the official LiteRT interpreter to execute the trained model; TensorFlow training and the full prepared dataset remain in the separate local project package. Local startup: `python -m pip install -r requirements.txt` followed by `python -m streamlit run app.py`.
 
 The initial screen replays a measured Windows desktop run. Select **Run actual TFLite model** to measure a fresh run on the hosting server. Both use host CPU, not ESP32. Noise type, requested SNR and movable onset are adjustable. Complete-run downloads are generated per session and downloaded as ZIP files; the hosting server is not a durable store for experiments.

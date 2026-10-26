@@ -14,3 +14,11 @@ prepared_data/
 # Originality checklist: deployment configuration is template-like.
 # [STUDENT TO ADD: our own observation from run X / bench test Y]
 # Rewrite interpretation, use university checker and disclose AI assistance.
+
+# Runtime unpacking and per-session configuration (already versioned files unaffected).
+.assets-ready
+.participant-*.json
+/assets/
+/experiment/
+/exports/
+/source_credits/

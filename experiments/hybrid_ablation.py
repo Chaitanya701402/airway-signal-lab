@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import hashlib
+import platform
 import os
 import random
 import time
@@ -40,6 +42,8 @@ def require_tensorflow():
 def _one_hot(labels: np.ndarray) -> np.ndarray:
     labels = np.asarray(labels)
     if labels.ndim == 2 and labels.shape[1] == 4:
+        if not np.isfinite(labels).all() or not np.all((labels == 0) | (labels == 1)) or not np.all(labels.sum(axis=1) == 1):
+            raise ValueError("One-hot labels must contain exactly one 1 per row and otherwise zeros.")
         return labels.astype(np.float32)
     if labels.ndim != 1 or not np.issubdtype(labels.dtype, np.integer):
         raise ValueError("Labels must be integer class indices or one-hot arrays with four columns.")
@@ -54,6 +58,8 @@ def _features(array: np.ndarray, name: str) -> np.ndarray:
         value = value[..., None]
     if value.ndim != 4 or value.shape[-1] != 1:
         raise ValueError(f"{name} must be (N, mels, frames) or (N, mels, frames, 1), got {value.shape}.")
+    if value.shape[0] == 0 or value.shape[2] < 8:
+        raise ValueError(f"{name} must be nonempty with at least 8 frames.")
     if value.shape[1] != 32:
         raise ValueError(f"{name} must contain 32 Mel bands, got {value.shape[1]}.")
     if not np.isfinite(value).all():
@@ -65,8 +71,8 @@ def load_prepared_npz(path: str | Path) -> dict:
     """Load a deliberately narrow, documented prepared-array interchange format.
 
     Required keys: X_train, y_train, X_val, y_val, X_test, y_test.
-    Optional group arrays are checked for source leakage; the runner does not infer
-    groups from window order. Features must already be normalized using train only,
+    Optional groups_train/groups_val/groups_test arrays are checked against the
+    manifest; the runner does not infer source identity from window order. Features must already be normalized using train only,
     with the supplied manifest recording the normalization provenance.
     """
     path = Path(path)
@@ -83,33 +89,63 @@ def load_prepared_npz(path: str | Path) -> dict:
         data[f"y_{split}"] = _one_hot(data[f"y_{split}"])
         if len(data[f"X_{split}"]) != len(data[f"y_{split}"]):
             raise ValueError(f"X_{split} and y_{split} have different lengths.")
+    if len({data[f"X_{split}"].shape[1:] for split in ("train", "val", "test")}) != 1:
+        raise ValueError("All splits must have the same feature shape.")
     return data
 
 
 def validate_provenance(data: dict, manifest_path: str | Path | None) -> dict:
-    """Validate the explicit source split manifest if available; otherwise report a block."""
-    report = {"manifest": None, "group_integrity": "unverified", "normalization": "unverified"}
+    """Check split-local manifest order, optional content binding and exact duplicates.
+
+    Legacy manifests cannot authenticate feature-to-source assignments. Even hashes
+    cannot establish that the original source identifiers were assigned correctly.
+    """
     if manifest_path is None:
-        return report
+        raise ValueError("A source manifest is required for training/evaluation.")
     path = Path(manifest_path)
-    if not path.is_file():
-        raise FileNotFoundError(f"Manifest not found: {path}")
-    rows = list(csv.DictReader(path.open(encoding="utf-8-sig", newline="")))
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
     required = {"split", "group_id", "class_name"}
     if not rows or not required.issubset(rows[0]):
         raise ValueError("Manifest must include split, group_id, and class_name columns.")
-    bad = [r for r in rows if r["split"] not in {"train", "val", "test"} or r["class_name"] not in CLASS_ORDER or not r["group_id"]]
-    if bad:
-        raise ValueError("Manifest contains invalid split, group_id, or class_name values.")
-    memberships: dict[str, set[str]] = {}
+    memberships, hashes = {}, {}
     for row in rows:
+        if row["split"] not in {"train", "val", "test"} or row["class_name"] not in CLASS_ORDER or not (row["group_id"] or "").strip():
+            raise ValueError("Manifest contains invalid split, group_id, or class_name values.")
         memberships.setdefault(row["group_id"], set()).add(row["split"])
-    leaked = sorted(group for group, splits in memberships.items() if len(splits) > 1)
-    if leaked:
-        raise ValueError(f"Source-group leakage in manifest: {leaked[:10]}")
-    report.update({"manifest": str(path), "manifest_rows": len(rows), "groups": len(memberships),
-                   "group_integrity": "verified", "normalization": "must be documented as train-only by manifest/run metadata"})
-    return report
+    if any(len(splits) > 1 for splits in memberships.values()):
+        raise ValueError("Source-group leakage in manifest.")
+    for split in ("train", "val", "test"):
+        selected = [r for r in rows if r["split"] == split]
+        x, y = data[f"X_{split}"], data[f"y_{split}"]
+        if len(selected) != len(x):
+            raise ValueError(f"Manifest row count mismatch for {split}.")
+        if [CLASS_ORDER.index(r["class_name"]) for r in selected] != np.argmax(y, axis=1).tolist():
+            raise ValueError(f"Manifest label order mismatch for {split}.")
+        if f"groups_{split}" in data:
+            if np.asarray(data[f"groups_{split}"]).tolist() != [r["group_id"] for r in selected]:
+                raise ValueError(f"Embedded source groups mismatch for {split}.")
+        for index, (row, feature) in enumerate(zip(selected, x)):
+            digest = feature_hash(feature)
+            if row.get("feature_sha256") and row["feature_sha256"] != digest:
+                raise ValueError(f"Feature hash mismatch for {split} row {index}.")
+            if digest in hashes and hashes[digest] != split:
+                raise ValueError("Exact duplicate features across splits.")
+            hashes[digest] = split
+    return {"manifest": str(path), "manifest_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "manifest_rows": len(rows), "groups": len(memberships),
+            "group_integrity": "manifest groups disjoint; not independent source authentication",
+            "label_alignment": "row order checked within each split",
+            "feature_binding": "verified" if all(r.get("feature_sha256") for r in rows) else "unverified: legacy manifest has no feature hashes",
+            "cross_split_exact_duplicates": 0,
+            "normalization": "not inferred from normalized arrays; verify train-only builder provenance"}
+
+
+def feature_hash(feature: np.ndarray) -> str:
+    """Canonical float32 hash, independent of channel singleton and signed zero."""
+    value = np.array(feature, dtype="<f4", copy=True).reshape(32, -1)
+    value[value == 0] = 0
+    return hashlib.sha256(value.tobytes()).hexdigest()
 
 
 def frequency_mean_layer():
@@ -227,9 +263,14 @@ def _plot_histories(histories: dict, path: Path) -> None:
 
 def run(data_path: str | Path, output_dir: str | Path, manifest: str | Path | None = None, seed: int = SEED,
         epochs: int = 35, batch_size: int = 32) -> dict:
+    if epochs < 1 or batch_size < 1:
+        raise ValueError("epochs and batch_size must be positive")
     tf = require_tensorflow(); set_seed(seed)
     data = load_prepared_npz(data_path); provenance = validate_provenance(data, manifest)
-    output = Path(output_dir); output.mkdir(parents=True, exist_ok=True)
+    output = Path(output_dir)
+    if output.exists() and any(output.iterdir()):
+        raise ValueError("Output directory must be empty to preserve earlier results.")
+    output.mkdir(parents=True, exist_ok=True)
     weights = class_weights(data["y_train"])
     rows, reports, histories, matrices = [], {}, {}, {}
     for variant in ("E0", "E1", "E2", "E3"):
@@ -245,25 +286,33 @@ def run(data_path: str | Path, output_dir: str | Path, manifest: str | Path | No
         duration = time.perf_counter() - start
         loaded = tf.keras.models.load_model(checkpoint)
         metrics, matrix = evaluate(loaded, data["X_test"], data["y_test"])
+        probabilities = loaded.predict(data["X_test"], verbose=0)
+        np.savez_compressed(output / f"{variant}_predictions.npz", probabilities=probabilities,
+                            truth=np.argmax(data["y_test"], axis=1))
+        loaded(data["X_test"][:1], training=False)  # warm-up excluded from timing
         elapsed = []
         for sample in data["X_test"][: min(100, len(data["X_test"]))]:
             begin = time.perf_counter_ns(); loaded(sample[None, ...], training=False); elapsed.append((time.perf_counter_ns() - begin) / 1e6)
         best = int(np.argmin(history.history["val_loss"])) + 1
         result = {**metrics, "parameter_count": int(loaded.count_params()), "training_duration_s": duration,
                   "best_val_loss": float(min(history.history["val_loss"])), "selected_epoch": best,
-                  "inference_mean_ms": float(np.mean(elapsed)), "inference_scope": "Keras model only; feature extraction excluded; current Colab device"}
+                  "inference_mean_ms": float(np.mean(elapsed)), "inference_scope": "Keras model only; feature extraction excluded; current device; one warm-up excluded"}
         reports[variant] = result; matrices[variant] = matrix.tolist(); histories[variant] = {k: [float(v) for v in vals] for k, vals in history.history.items()}
         rows.append({"variant": variant, **{key: result[key] for key in ("accuracy", "macro_precision", "macro_recall", "macro_f1", "parameter_count", "training_duration_s", "best_val_loss", "selected_epoch", "inference_mean_ms")}})
     with (output / "ablation_results.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=rows[0].keys()); writer.writeheader(); writer.writerows(rows)
     (output / "detailed_reports.json").write_text(json.dumps({"class_order": CLASS_ORDER, "reports": reports, "confusion_matrices": matrices}, indent=2), encoding="utf-8")
-    _plot_matrix(np.array(matrices["E0"]), output / "confusion_matrix_E0.png", "E0 test confusion matrix")
-    _plot_matrix(np.array(matrices["E3"]), output / "confusion_matrix_E3.png", "E3 test confusion matrix")
     _plot_histories(histories, output / "training_curves.png")
-    metadata = {"status": "completed", "seed": seed, "class_order": CLASS_ORDER, "data_path": str(data_path),
+    (output / "histories.json").write_text(json.dumps(histories, indent=2), encoding="utf-8")
+    for variant, matrix in matrices.items():
+        _plot_matrix(np.array(matrix), output / f"confusion_matrix_{variant}.png", f"{variant} test confusion matrix")
+    metadata = {"status": "completed", "epochs_requested": epochs, "batch_size": batch_size,
+                "python": platform.python_version(), "tensorflow": tf.__version__, "numpy": np.__version__,
+                "devices": [d.device_type for d in tf.config.list_physical_devices()],
+                "data_sha256": hashlib.sha256(Path(data_path).read_bytes()).hexdigest(), "seed": seed, "class_order": CLASS_ORDER, "data_path": str(data_path),
                 "provenance": provenance, "feature_protocol": "Prepared 16 kHz mono 2 s windows; 32-band log-Mel; FFT 512; hop 256. Train-only normalization must be documented by supplied artifact.",
                 "historical_reference": "7,344-parameter CNN and 0.8816 macro F1 are historical, not reproduced claims; E0 is a reimplementation because original training source is absent.",
-                "scientific_limits": "Synthetic obstruction surrogates are not clinical labels; ambient includes real cough; held-out custom split is not an official ICBHI score."}
+                "scientific_limits": "Synthetic obstruction surrogates are not clinical labels; ambient composition depends on supplied dataset; held-out custom split is not an official ICBHI score."}
     (output / "run_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     (output / "README.md").write_text("# Hybrid ablation output\n\nGenerated by `experiments/hybrid_ablation.py`. Checkpoints use validation loss; held-out test is evaluated once per fixed configuration. Synthetic obstruction results are not clinical validation.\n", encoding="utf-8")
     return {"rows": rows, "output": str(output)}

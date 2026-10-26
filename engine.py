@@ -505,7 +505,9 @@ def run_scenario(config_path: str | Path, snr_db: float | None = None,
         inference_ms.append(elapsed)
         rms_values.append(float(np.sqrt(np.mean(chunk.astype(np.float64) ** 2))))
     probabilities, inference_ms, rms_values = map(np.asarray, (probabilities, inference_ms, rms_values))
+    from diagnostics import inference_diagnostics
     labels = list(config["class_order"])
+    diagnostics = inference_diagnostics(probabilities, inference_ms, labels)
     model_alarm = model_alarm_trace(probabilities, times, labels, config["alarm"])
     baseline_alarm = baseline_alarm_trace(rms_values, times, config["baseline"])
     metrics = compute_metrics(times, window / sr, model_alarm, baseline_alarm, events, inference_ms)
@@ -523,7 +525,7 @@ def run_scenario(config_path: str | Path, snr_db: float | None = None,
             "features": np.stack(features), "inference_ms": inference_ms,
             "model_alarm": model_alarm, "baseline_alarm": baseline_alarm, "events": events,
             "labels": labels, "metrics": metrics, "log_rows": rows, "config": config,
-            "metadata": {"runtime": model.runtime, "inference_device": "host CPU, not ESP32",
+            "metadata": {"diagnostics": diagnostics, "runtime": model.runtime, "inference_device": "host CPU, not ESP32",
                          "detection_latency_scope": "Audio-timeline algorithmic latency; excludes processing and rendering; not end-to-end or ESP32 latency.",
                          "inference_timing_scope": "TFLite invoke only; includes first invocation; excludes feature extraction and display",
                          "model_sha256": _sha256(model_path), "sources": source_records, "mixing": mixing,

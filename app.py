@@ -15,6 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from engine import run_scenario
+from diagnostics import inference_diagnostics
 from visualization import render_airway
 
 
@@ -269,6 +270,11 @@ def render_run(result: dict, config: dict) -> None:
     st.session_state.setdefault("playing", False)
     st.session_state.setdefault("speed", 1.0)
     render_scenario_audio(result)
+    with st.expander("Inference diagnostics"):
+        diagnostics = inference_diagnostics(result["probabilities"], result["inference_ms"], result["labels"])
+        st.caption(diagnostics["interpretation"])
+        st.caption("Timing covers model invocation only, including the first call; excludes audio processing and display. Host CPU, not ESP32.")
+        st.json(diagnostics)
     st.markdown("### Watch the model respond")
     controls = st.columns([1, 1, 3])
     if controls[0].button("Pause" if st.session_state.playing else "Play timeline", use_container_width=True):

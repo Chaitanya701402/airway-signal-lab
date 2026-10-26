@@ -24,7 +24,9 @@ The result is a controlled engineering ablation, not a clinical result or a nume
 - [E2 held-out confusion matrix](experiments/bundled_reconstruction/confusion_matrix_E2.png)
 - [Google Colab workflow](notebooks/bundled_reconstruction_colab.ipynb)
 
-To reproduce the experiment, run `python experiments/build_bundled_reconstruction.py`, then run `python experiments/hybrid_ablation.py --data experiments/bundled_reconstruction/prepared_source_split.npz --manifest experiments/bundled_reconstruction/window_manifest.csv --output experiments/bundled_reconstruction/ablation --epochs 35 --batch-size 16`. Finally, run `python experiments/validate_bundled_reconstruction.py` and `python experiments/plot_bundled_results.py`.
+A fresh CPU repeat (seed 20261026, batch size 32) found E3 highest at 93.75% accuracy and 0.9365 macro F1; the table above is the earlier run. Rankings differ across the two configurations, so neither establishes a reliably superior architecture. See [Phase 9 results, diagnostics and verification](experiments/phase9_repeat/REPORT.md).
+
+To reproduce into a fresh directory, run `python experiments/build_bundled_reconstruction.py --output prepared_data/repeat`, then `python experiments/hybrid_ablation.py --data prepared_data/repeat/prepared_source_split.npz --manifest prepared_data/repeat/window_manifest.csv --output prepared_data/repeat/ablation --seed 20261026 --epochs 35 --batch-size 32`. Run `python experiments/validate_bundled_reconstruction.py --experiment-dir prepared_data/repeat`. Existing datasets and nonempty run directories are protected against overwriting.
 
 Deploy through Streamlit Community Cloud using repository branch `main`, entrypoint `app.py`, and Python **3.13**. No secrets are needed by this app. Hosting uses the official LiteRT interpreter to execute the trained model; TensorFlow training and the full prepared dataset remain in the separate local project package. Local startup: `python -m pip install -r requirements.txt` followed by `python -m streamlit run app.py`.
 

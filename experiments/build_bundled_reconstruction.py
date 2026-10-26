@@ -8,6 +8,8 @@ as clinical performance or as a reproduction of RESULTS.md.
 """
 from __future__ import annotations
 
+import argparse
+import hashlib
 import base64
 import csv
 import json
@@ -71,6 +73,9 @@ def make_examples(breath: np.ndarray, participant: str, rng: np.random.Generator
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=ROOT / "experiments" / "bundled_reconstruction")
+    args = parser.parse_args()
     rng = np.random.default_rng(SEED)
     registry = json.loads((ROOT / "participants.json").read_text(encoding="utf-8"))
     rows, split_values = [], {name: [] for name in ("train", "val", "test")}
@@ -85,17 +90,28 @@ def main() -> None:
                          "derivation": "bundled reconstruction; synthetic additive noise or documented DSP surrogate"})
     train_features = np.stack([x for x, _ in split_values["train"]])
     mean, std = float(train_features.mean()), float(train_features.std())
-    output = ROOT / "experiments" / "bundled_reconstruction"
+    output = args.output
+    if (output / "prepared_source_split.npz").exists():
+        raise ValueError("Dataset already exists; choose a new --output directory.")
     output.mkdir(parents=True, exist_ok=True)
     arrays = {}
     for split, values in split_values.items():
         arrays[f"X_{split}"] = (np.stack([x for x, _ in values]) - mean) / max(std, 1e-6)
         arrays[f"y_{split}"] = np.asarray([y for _, y in values], dtype=np.int64)
+    for split in split_values:
+        selected = [row for row in rows if row["split"] == split]
+        arrays[f"groups_{split}"] = np.asarray([row["group_id"] for row in selected])
+        for index, row in enumerate(selected):
+            value = np.array(arrays[f"X_{split}"][index], dtype="<f4", copy=True)
+            value[value == 0] = 0
+            row["feature_sha256"] = hashlib.sha256(value.tobytes()).hexdigest()
     np.savez_compressed(output / "prepared_source_split.npz", **arrays)
     with (output / "window_manifest.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=rows[0].keys()); writer.writeheader(); writer.writerows(rows)
     (output / "dataset_metadata.json").write_text(json.dumps({
-        "status": "prepared", "seed": SEED, "class_order": CLASS_ORDER,
+        "status": "prepared", "seed": SEED,
+        "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "numpy": np.__version__, "librosa": librosa.__version__, "class_order": CLASS_ORDER,
         "splits": SPLITS, "counts": {key: len(value) for key, value in split_values.items()},
         "normalization": {"type": "global_scalar", "fit": "training features only", "mean": mean, "std": std},
         "scope": "Small bundled reconstruction using eight ICBHI breathing sources. Ambient and obstruction examples are generated transformations; results are not clinical validation and are not comparable to the historical full prepared-data evaluation."}, indent=2), encoding="utf-8")

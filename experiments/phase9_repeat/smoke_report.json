@@ -1,0 +1,50 @@
+{
+  "architecture_smoke": {
+    "E0": {
+      "parameters": 7344,
+      "output_shape": [
+        2,
+        4
+      ]
+    },
+    "E1": {
+      "parameters": 13104,
+      "output_shape": [
+        2,
+        4
+      ]
+    },
+    "E2": {
+      "parameters": 7369,
+      "output_shape": [
+        2,
+        4
+      ]
+    },
+    "E3": {
+      "parameters": 13137,
+      "output_shape": [
+        2,
+        4
+      ]
+    }
+  },
+  "streamlit_initial_exceptions": 0,
+  "tflite_diagnostics": {
+    "windows": 113,
+    "predicted_class_counts": {
+      "normal": 24,
+      "ambient": 75,
+      "movable_synthetic": 14,
+      "fixed_synthetic": 0
+    },
+    "mean_max_probability": 0.8986067597619724,
+    "mean_top_two_margin": 0.8080503505552633,
+    "mean_normalized_entropy": 0.16839372105404204,
+    "inference_median_ms": 0.1806,
+    "inference_p95_ms": 0.25155999999999984,
+    "interpretation": "Describes output concentration, not calibrated confidence or accuracy. Correlated windows are not independent observations."
+  },
+  "runtime": "tensorflow.lite",
+  "model_sha256": "73ad9be43d03e8fbd38c0f4e32140f1890ae570ac92778263ad9f48966800e30"
+}
